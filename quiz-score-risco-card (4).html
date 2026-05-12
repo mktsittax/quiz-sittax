@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score de Risco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&family=DM+Serif+Display:ital@1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --black: #0d0d0d;
+    --card-bg: #161616;
+    --card-border: #2a2a2a;
+    --orange: #e84c1e;
+    --gold: #c9a84c;
+    --white: #f0ece4;
+    --muted: #6b6b6b;
+    --text: #d8d4cc;
+    --option-bg: #1c1c1c;
+    --option-border: #333;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    font-family: 'Barlow', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 620px;
+  }
+
+  /* PROGRESS */
+  .progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .progress-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--orange);
+    text-transform: uppercase;
+  }
+
+  .progress-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 36px;
+    height: 3px;
+    background: var(--card-border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+
+  .dot.active { background: var(--orange); }
+  .dot.done   { background: #5a2a1a; }
+
+  /* QUESTION */
+  .question-text {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--white);
+    margin-bottom: 28px;
+  }
+
+  /* OPTIONS */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: var(--option-bg);
+    border: 1px solid var(--option-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+
+  .option:hover { border-color: #555; }
+
+  .option.selected {
+    background: #1e1009;
+    border-color: var(--orange);
+  }
+
+  .option-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--option-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .option.selected .option-letter {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+
+  .option-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  /* NEXT BUTTON */
+  .btn-next {
+    margin-top: 24px;
+    width: 100%;
+    padding: 15px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: none;
+  }
+
+  .btn-next.visible { display: block; }
+  .btn-next:hover { opacity: 0.88; }
+
+  /* RESULT */
+  .result-screen { display: none; flex-direction: column; }
+  .result-screen.visible { display: flex; }
+
+  .result-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .score-number {
+    font-size: 88px;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .score-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .score-total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #555;
+  }
+
+  .score-sublabel {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .bar-track {
+    height: 6px;
+    background: #2a2a2a;
+    border-radius: 3px;
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 1s ease;
+  }
+
+  .result-title {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 30px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .result-desc {
+    font-size: 15px;
+    color: #8a8680;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-cta {
+    padding: 14px 20px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-cta:hover { opacity: 0.88; }
+
+  .btn-refazer {
+    padding: 14px 20px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .btn-refazer:hover { border-color: #555; }
+
+  /* FADE */
+  .fade { transition: opacity 0.2s, transform 0.2s; }
+  .fade.out { opacity: 0; transform: translateY(6px); }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="progress-header" id="progressHeader">
+    <span class="progress-label" id="progressLabel">Pergunta 01 / 04</span>
+    <div class="progress-dots">
+      <div class="dot active" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+  </div>
+
+  <div id="questionArea" class="fade">
+    <div class="question-text" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+    <button class="btn-next" id="btnNext" onclick="next()">Próxima pergunta →</button>
+  </div>
+
+  <div class="result-screen" id="resultScreen">
+    <div class="result-label">Seu Resultado</div>
+    <div class="score-number" id="scoreNum">0</div>
+    <div class="score-meta">
+      <span class="score-total">/ 100</span>
+      <span class="score-sublabel">Score de risco</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-desc" id="resultDesc"></div>
+    <div class="result-actions">
+      <button class="btn-refazer" onclick="restart()">Refazer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const questions = [
+    {
+      text: "Onde está armazenado o(s) certificado(s) dos seus clientes hoje?",
+      options: [
+        { l: "A", t: "Token físico ou A3 em nuvem com login individual", s: 10 },
+        { l: "B", t: "Arquivo A1 em pasta protegida no servidor interno",  s: 33 },
+        { l: "C", t: "Arquivo A1 distribuído nas máquinas dos colaboradores", s: 66 },
+        { l: "D", t: "Não sei dizer com precisão", s: 100 }
+      ]
+    },
+    {
+      text: "Como é compartilhada a senha do certificado com a equipe?",
+      options: [
+        { l: "A", t: "Cofre de senhas com acesso por permissão", s: 10 },
+        { l: "B", t: "Mensagem direta (WhatsApp, e-mail, chat)", s: 66 },
+        { l: "C", t: "Planilha ou documento compartilhado", s: 80 },
+        { l: "D", t: "Cada colaborador tem sua própria credencial", s: 10 }
+      ]
+    },
+    {
+      text: "Quando um colaborador é desligado, o que acontece com o acesso ao certificado?",
+      options: [
+        { l: "A", t: "Acesso é revogado no mesmo dia, com log auditável", s: 5 },
+        { l: "B", t: "Senha é trocada quando alguém lembra", s: 55 },
+        { l: "C", t: "Nada de específico acontece", s: 90 },
+        { l: "D", t: "Nunca passei por essa situação", s: 50 }
+      ]
+    },
+    {
+      text: "Você consegue rastrear quem usou cada certificado e quando?",
+      options: [
+        { l: "A", t: "Sim, temos log completo e auditável", s: 5 },
+        { l: "B", t: "Parcialmente — só em alguns casos", s: 40 },
+        { l: "C", t: "Não temos nenhum tipo de rastreamento", s: 85 },
+        { l: "D", t: "Nunca pensamos nisso", s: 100 }
+      ]
+    }
+  ];
+
+  const levels = [
+    { max: 20,  title: "Baixo risco",         desc: "Sua estrutura está bem organizada. O e-book traz práticas avançadas para manter esse nível de controle — preencha o formulário acima e baixe agora." },
+    { max: 45,  title: "Risco controlado",    desc: "Existem pontos de atenção. Pequenos ajustes no processo evitam exposições futuras — preencha o formulário acima, baixe o e-book e saiba como corrigir." },
+    { max: 70,  title: "Exposição moderada",  desc: "Há pontos cegos na sua operação. O e-book mostra exatamente como fechá-los — preencha o formulário acima e baixe agora." },
+    { max: 100, title: "Alto risco",          desc: "Sua operação está exposta e precisa de atenção imediata. Preencha o formulário acima, baixe o e-book e comece pelo capítulo 05." }
+  ];
+
+  let current = 0, scores = [], selected = null;
+
+  function render() {
+    const q = questions[current];
+    document.getElementById("questionText").textContent = q.text;
+
+    const c = document.getElementById("optionsContainer");
+    c.innerHTML = "";
+    q.options.forEach((o, i) => {
+      const d = document.createElement("div");
+      d.className = "option";
+      d.innerHTML = `<div class="option-letter">${o.l}</div><div class="option-text">${o.t}</div>`;
+      d.addEventListener("click", () => pick(i, d));
+      c.appendChild(d);
+    });
+
+    const n = String(current + 1).padStart(2, "0");
+    document.getElementById("progressLabel").textContent = `Pergunta ${n} / 04`;
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById("d" + i);
+      d.className = "dot" + (i < current ? " done" : i === current ? " active" : "");
+    }
+
+    selected = null;
+    const btn = document.getElementById("btnNext");
+    btn.classList.remove("visible");
+    btn.textContent = current === questions.length - 1 ? "Ver resultado →" : "Próxima pergunta →";
+  }
+
+  function pick(i, el) {
+    document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+    el.classList.add("selected");
+    selected = i;
+    document.getElementById("btnNext").classList.add("visible");
+  }
+
+  function next() {
+    if (selected === null) return;
+    scores.push(questions[current].options[selected].s);
+
+    if (current < questions.length - 1) {
+      const area = document.getElementById("questionArea");
+      area.classList.add("out");
+      setTimeout(() => { current++; render(); area.classList.remove("out"); }, 200);
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult() {
+    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    const level = levels.find(l => avg <= l.max);
+
+    document.getElementById("questionArea").style.display = "none";
+    document.getElementById("progressHeader").style.display = "none";
+    document.getElementById("resultScreen").classList.add("visible");
+
+    let count = 0;
+    const el = document.getElementById("scoreNum");
+    const iv = setInterval(() => {
+      count += 2;
+      if (count >= avg) { count = avg; clearInterval(iv); }
+      el.textContent = count;
+    }, 16);
+
+    setTimeout(() => { document.getElementById("barFill").style.width = avg + "%"; }, 80);
+
+    document.getElementById("resultTitle").textContent = level.title;
+    document.getElementById("resultDesc").textContent = level.desc;
+  }
+
+  function restart() {
+    current = 0; scores = []; selected = null;
+    document.getElementById("questionArea").style.display = "";
+    document.getElementById("progressHeader").style.display = "";
+    document.getElementById("resultScreen").classList.remove("visible");
+    document.getElementById("barFill").style.width = "0%";
+    render();
+  }
+
+  render();
+
+  // Notifica a página pai (GreatPages) da altura real do conteúdo
+  function notifyHeight() {
+    const h = document.body.scrollHeight;
+    window.parent.postMessage({ type: 'resize', height: h }, '*');
+    // Fallback: alguns builders leem direto do iframe
+    if (window.frameElement) {
+      window.frameElement.style.height = h + 'px';
+    }
+  }
+
+  // Observa mudanças no DOM (troca de tela, seleção de opção, etc.)
+  const observer = new ResizeObserver(notifyHeight);
+  observer.observe(document.body);
+  notifyHeight();
+</script>
+</body>
+</html>
